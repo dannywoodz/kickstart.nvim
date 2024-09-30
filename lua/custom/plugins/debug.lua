@@ -10,7 +10,25 @@ return {
     local dapui = require 'dapui'
 
     require('dapui').setup()
-    require('dap-go').setup()
+    require('dap-go').setup {
+      dap_configurations = {
+        {
+          type = 'go',
+          name = 'Attach remote',
+          mode = 'remote',
+          request = 'attach',
+        },
+      },
+      delve = {
+        path = '/home/danny/go/bin/dlv',
+        initialize_timeout_spec = 20,
+        port = '${port}',
+        args = {},
+        build_flags = '',
+        detached = true,
+        cwd = nil,
+      },
+    }
 
     dap.listeners.before.attach.depui_config = function()
       dapui.open()
