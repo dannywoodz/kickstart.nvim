@@ -1,49 +1,124 @@
 return {
   'mfussenegger/nvim-dap',
   dependencies = {
-    'nvim-neotest/nvim-nio',
+    -- Creates a beautiful debugger UI
     'rcarriga/nvim-dap-ui',
-    'leoluz/nvim-dap-go',
+
+    -- Required dependency for nvim-dap-ui
+    'nvim-neotest/nvim-nio',
+
+    -- optional
+    'mason-org/mason.nvim',
+    'jay-babu/mason-nvim-dap.nvim',
+
+    -- Language-specific debuggers
+    'leoluz/nvim-dap-go', -- Golang
+
+    -- Shows variable values inline as virtual text
+    'theHamsta/nvim-dap-virtual-text',
+  },
+  keys = {
+    {
+      '<leader>Dc',
+      function()
+        require('dap').continue()
+      end,
+      desc = 'Debug: Start/Continue',
+    },
+    {
+      '<leader>Dsi',
+      function()
+        require('dap').step_into()
+      end,
+      desc = 'Debug: Step Into',
+    },
+    {
+      '<leader>DsO',
+      function()
+        require('dap').step_over()
+      end,
+      desc = 'Debug: Step Over',
+    },
+    {
+      '<leader>Dso',
+      function()
+        require('dap').step_out()
+      end,
+      desc = 'Debug: Step Out',
+    },
+    {
+      '<leader>Db',
+      function()
+        require('dap').toggle_breakpoint()
+      end,
+      desc = 'Debug: Toggle Breakpoint',
+    },
+    {
+      '<leader>DB',
+      function()
+        require('dap').set_breakpoint(vim.fn.input 'Breakpoint condition: ')
+      end,
+      desc = 'Debug: Set Conditional Breakpoint',
+    },
+    {
+      '<leader>Dt',
+      function()
+        require('dapui').toggle()
+      end,
+      desc = 'Debug: Toggle UI',
+    },
+    {
+      '<leader>Dl',
+      function()
+        require('dap').run_last()
+      end,
+      desc = 'Debug: Run Last Configuration',
+    },
   },
   config = function()
     local dap = require 'dap'
     local dapui = require 'dapui'
 
-    require('dapui').setup()
-    require('dap-go').setup {
-      dap_configurations = {
-        {
-          type = 'go',
-          name = 'Attach remote',
-          mode = 'remote',
-          request = 'attach',
+    -- optional
+    -- require('mason-nvim-dap').setup {
+    --     automatic_installation = true,
+    --     handlers = {},
+    --     ensure_installed = {
+    --         'delve',
+    --     },
+    -- }
+
+    -- Dap UI setup
+    dapui.setup {
+      icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
+      controls = {
+        icons = {
+          pause = '⏸',
+          play = '▶',
+          step_into = '⏎',
+          step_over = '⏭',
+          step_out = '⏮',
+          step_back = 'b',
+          run_last = '▶▶',
+          terminate = '⏹',
+          disconnect = '⏏',
         },
-      },
-      delve = {
-        path = '/home/danny/go/bin/dlv',
-        initialize_timeout_spec = 20,
-        port = '${port}',
-        args = {},
-        build_flags = '',
-        detached = true,
-        cwd = nil,
       },
     }
 
-    dap.listeners.before.attach.depui_config = function()
-      dapui.open()
-    end
-    dap.listeners.before.launch.dapui_config = function()
-      dapui.open()
-    end
-    dap.listeners.before.event_terminated.dapui_config = function()
-      dapui.close()
-    end
-    dap.listeners.before.event_exited.dapui_config = function()
-      dapui.close()
-    end
+    -- Automatically open/close DAP UI
+    dap.listeners.after.event_initialized['dapui_config'] = dapui.open
+    dap.listeners.before.event_terminated['dapui_config'] = dapui.close
+    dap.listeners.before.event_exited['dapui_config'] = dapui.close
 
-    vim.keymap.set('n', '<Leader>dt', dap.toggle_breakpoint, { desc = 'Toggle breakpoint' })
-    vim.keymap.set('n', '<Leader>dc', dap.continue, { desc = 'Continue' })
+    -- Setup virtual text to show variable values inline
+    require('nvim-dap-virtual-text').setup()
+
+    require('dap-go').setup {
+      delve = {
+        -- Path to delve executable, only needed if you're not using mason-nvim-dap
+        path = vim.fn.exepath 'dlv' ~= '' and vim.fn.exepath 'dlv' or '/home/danny/go/bin/dlv',
+      },
+    }
   end,
 }
